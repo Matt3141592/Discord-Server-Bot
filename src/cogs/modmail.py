@@ -1,28 +1,190 @@
-import os, discord, typing
+import os, discord, typing, pprint
+from discord_slash import cog_ext, SlashContext, ComponentContext
+from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option
+from discord_slash.model import ButtonStyle
 from discord.ext import commands
 from helpers.embed import full_embed
 from helpers.misc import time_ago_readable, get_id_from_thread
+
+modmail_guild_id = [829495730464882738]
 
 class ModmailCommands(commands.Cog, name='Modmail Commands'):
     """Commands to make modmail easier"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.guild = self.bot.get_guild(781979349855371314)
         self.mail_log = self.bot.get_channel(829495730644713486)
-        self.year8 = discord.utils.get(self.guild.roles, name = "Year 8")
-        self.year9 = discord.utils.get(self.guild.roles, name = "Year 9")
-        self.year10 = discord.utils.get(self.guild.roles, name = "Year 10")
-        self.year11 = discord.utils.get(self.guild.roles, name = "Year 11")
-        self.year12 = discord.utils.get(self.guild.roles, name = "Year 12")
-        self.year13 = discord.utils.get(self.guild.roles, name = "Year 13")
-        self.university = discord.utils.get(self.guild.roles, name = "University")
         
+   
+
+    async def id_function(self, ctx):
+        user_id = await get_id_from_thread(ctx.channel)
+        if user_id == None:
+            await ctx.send("Unable to find user ID in channel.")
+            return
+        await ctx.send(user_id)
+    
+    async def operation(self, member, role_name):
+        if discord.utils.get(self.bot.get_guild(781979349855371314).roles, name=role_name) in member.roles:
+            return "remove"
+        return "add"
+
+    async def roles_message(self, member):
+        embed = full_embed(
+            author_name=member.name, 
+            author_icon=member.avatar_url,
+            title = "Roles",
+            description = "`@" + "` `@".join([role.name for role in member.roles[1:]]) + "`")     
+        
+        year8_status = await self.operation(member, "Year 8")
+        year9_status = await self.operation(member, "Year 9")
+        year10_status = await self.operation(member, "Year 10")
+        year11_status = await self.operation(member, "Year 11")
+        year12_status = await self.operation(member, "Year 12")
+        year13_status = await self.operation(member, "Year 13")
+        university_status = await self.operation(member, "University")
+
+        dropdown = create_select(
+            options = [
+                create_select_option(year8_status, value=f"{year8_status} 8", emoji=discord.utils.get(self.bot.emojis, name="y8")),
+                create_select_option(year9_status, value=f"{year9_status} 9", emoji=discord.utils.get(self.bot.emojis, name="y9")),
+                create_select_option(year10_status, value=f"{year10_status} 10", emoji=discord.utils.get(self.bot.emojis, name="y10")),
+                create_select_option(year11_status, value=f"{year11_status} 11", emoji=discord.utils.get(self.bot.emojis, name="y11")),
+                create_select_option(year12_status, value=f"{year12_status} 12", emoji=discord.utils.get(self.bot.emojis, name="y12")),
+                create_select_option(year13_status, value=f"{year13_status} 13", emoji=discord.utils.get(self.bot.emojis, name="y13")),
+                create_select_option(university_status, value=f"{university_status} university", emoji=discord.utils.get(self.bot.emojis, name="uni"))],
+            placeholder="Change user's roles",
+            custom_id="role_select",
+            max_values=1)
+        return embed, dropdown
+
+    async def roles_function(self, ctx):
+        member = self.bot.get_guild(781979349855371314).get_member(await get_id_from_thread(ctx.channel))
+        if member == None:
+            await ctx.reply("Unable to fetch member data, are they in the server?.")
+            return      
+        embed, dropdown = await self.roles_message(member)
+
+        await ctx.reply(embed=embed, components=[create_actionrow(dropdown)])
 
 
-    @commands.command(name='close')
+    async def role_edit(self, ctx, role, action="add"):
+        guild = self.bot.get_guild(781979349855371314)
+        member = guild.get_member(await get_id_from_thread(ctx.channel))
+        role_name = f"Year {role}"
+        if role == "8":
+            role = discord.utils.get(guild.roles, name = "Year 8")
+        elif role == "9":
+            role = discord.utils.get(guild.roles, name = "Year 9")
+        elif role == "10":
+            role = discord.utils.get(guild.roles, name = "Year 10")
+        elif role == "11":
+            role = discord.utils.get(guild.roles, name = "Year 11")
+        elif role == "12":
+            role = discord.utils.get(guild.roles, name = "Year 12")
+        elif role == "13":
+           role = discord.utils.get(guild.roles, name = "Year 13")
+        elif role == "university":
+            role = discord.utils.get(guild.roles, name = "University")
+            role_name = "University"
+    
+        if action == "remove":
+            await member.remove_roles(role)
+            await ctx.send(f"Removed role `{role_name}` from {member.mention} (**{member.name}**, {member.id}).", delete_after=15)
+        elif action == "add":
+            await member.add_roles(role)
+            await ctx.send(f"Added role `{role_name}` to {member.mention} (**{member.name}**, {member.id}).",delete_after=15)
+    
+    @cog_ext.cog_component()
+    async def role_select(self, ctx: ComponentContext):
+        split_value = ctx.selected_options[0].split()
+        await self.role_edit(ctx, role=split_value[1], action=split_value[0])
+
+        await ctx.edit_origin(content="You pressed a button!")
+
+
+
+
+
+    async def info_function(self, ctx):
+        member = self.bot.get_guild(781979349855371314).get_member(await get_id_from_thread(ctx.channel))
+        if member == None:
+            await ctx.reply("Unable to find user ID in channel or fetch member data.")
+            return
+        
+        created_difference = time_ago_readable(member.created_at)
+        joined_difference = time_ago_readable(member.joined_at)
+        roles = "`@" + "` `@".join([role.name for role in member.roles[1:]]) + "`"
+
+        embed = full_embed(
+            author_name=member.name, author_icon=member.avatar_url,
+            fields={
+                "User Information":f"Name: **{member.name}** \nID: `{member.id}` \nCreated: **{created_difference}** (`{member.created_at.strftime('%B %d, %Y at %H:%M UTC')}`) \nMention: {member.mention}",
+                "Member Information":f"Joined: **{joined_difference} ago** (`{member.joined_at.strftime('%B %d, %Y at %H:%M UTC')}`) \nRoles: {roles}"
+            },
+            fields_inline=False,
+            blank=True)
+
+        await ctx.reply(embed=embed)
+
+
+
+    @cog_ext.cog_slash(name="id", description="Fetches ID of thread creator", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
-    async def close(self, ctx):
+    async def id_command(self, ctx:SlashContext):
+        await self.id_function(ctx)
+
+    
+    @cog_ext.cog_slash(name="roles", description="Displays role of thread creator", guild_ids=modmail_guild_id)
+    @commands.has_role(829495730464882741) #Staff on modmail server
+    async def roles_command(self, ctx:SlashContext):
+        await self.roles_function(ctx)
+
+    @cog_ext.cog_slash(name="info", description="Closes and logs thread", guild_ids=modmail_guild_id)
+    @commands.has_role(829495730464882741) #Staff on modmail server
+    async def info_command(self, ctx:SlashContext):
+        await self.info_function(ctx)    
+        
+    
+
+    
+    @cog_ext.cog_slash(name="controlpanel", description="Returns the threads' control panel", guild_ids=modmail_guild_id)
+    @commands.has_role(829495730464882741) #Staff on modmail server
+    async def controlpanel(self, ctx):
+        if ctx.channel.category_id not in [829495730464882744, 832016200950218792]: #Inbox/Applications
+            await ctx.reply(f"You can not run that command in this category!")
+            return
+        
+        embed = full_embed(
+            title="Thread user control panel")
+
+        await ctx.reply(embed=embed, components=[create_actionrow(
+            create_button(style=ButtonStyle.blue, label="ID", custom_id="id_button"), 
+            create_button(style=ButtonStyle.blue, label="Roles", custom_id="roles_button"), 
+            create_button(style=ButtonStyle.blue, label="Info", custom_id="info_button"))])
+
+    @cog_ext.cog_component()
+    async def id_button(self, ctx: ComponentContext):
+        await self.id_function(ctx)
+    @cog_ext.cog_component()
+    async def roles_button(self, ctx: ComponentContext):
+        await self.roles_function(ctx)
+    @cog_ext.cog_component()
+    async def info_button(self, ctx: ComponentContext):
+        await self.info_function(ctx)
+
+
+
+
+
+
+   
+
+
+
+    @cog_ext.cog_slash(name="close", description="Closes and logs thread", guild_ids=modmail_guild_id)
+    @commands.has_role(829495730464882741) #Staff on modmail server
+    async def close_command(self, ctx:SlashContext):
         '''Closes modmail thread'''
         if ctx.channel.category_id not in [829495730464882744, 832016200950218792]: #Inbox/Applications
             await ctx.send(f"You can not run that command in this category!")
@@ -42,153 +204,7 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
         
         await ctx.channel.delete(reason=f"Closed by {ctx.author.name} ({ctx.author.id})")
         os.remove(file_name)
-
-
-
-    @commands.command(name="role")
-    @commands.has_role(829495730464882741) #Staff on modmail server
-    async def role(self, ctx, role, action:typing.Optional[str]="add", member:typing.Optional[discord.Member]=None):
-        
-        if role not in ["8", "9", "10", "11", "12", "13", "university", "u"]:
-            await ctx.send(f"Unkown role: `{role}`. Accepted roles: `8`, `9`, `10`, `11`, `12`, `13` or `university`/`u`.")
-            return
-
-        if member == None:
-            user_id = await get_id_from_thread(ctx.channel)
-            if user_id == None:
-                await ctx.message.reply("Unable to find user ID in channel.")
-                return
-            member = self.guild.get_member(user_id)
-            if member == None:
-                await ctx.message.reply("Unable to fetch member data, are they in the server?.")
-                return
-
-        else:
-            member = self.guild.get_member(member.id)
-
-        role_name = f"Year {role}"
-        if role == "8":
-            role = self.year8
-        elif role == "9":
-            role = self.year9
-        elif role == "10":
-            role = self.year10
-        elif role == "11":
-            role = self.year11
-        elif role == "12":
-            role = self.year12
-        elif role == "13":
-           role = self.year13
-        elif role in ["university", "u"]:
-            role = self.university
-            role_name = "University"
-
-        if action.lower() in ["remove", "r"]:
-            await member.remove_roles(role)
-            await ctx.message.reply(f"Removed role `{role_name}` to {member.mention} (**{member.name}**, {member.id}).")
-        elif action.lower() == "add":
-            await member.add_roles(role)
-            await ctx.message.reply(f"Added role `{role_name}` to {member.mention} (**{member.name}**, {member.id}).")
-        else:
-            await ctx.message.reply(f"Unkown action '`{action}`', available types: `remove`/`r` or `add`.")
-
-
-
-    @commands.command(name="roles", aliases=["r"])
-    @commands.has_role(829495730464882741) #Staff on modmail server
-    async def roles(self, ctx, user:typing.Optional[discord.User]=None):
-        if user == None:
-            user_id = await get_id_from_thread(ctx.channel)
-            if user_id == None:
-                await ctx.message.reply("Unable to find user ID in channel.")
-                return
-        member = self.guild.get_member(user_id)
-        if member == None:
-            await ctx.message.reply("Unable to fetch member data, are they in the server?.")
-            return
-
-        roles = "`@" + "` `@".join([role.name for role in member.roles[1:]]) + "`"
-
-        embed = full_embed(
-            author_name=member.name, 
-            author_icon=member.avatar_url,
-            title = "Roles",
-            description = roles)
-
-        sent = await ctx.message.reply(embed=embed)
-        await sent.add_reaction("️<:y9:879495112659447858>")
-        await sent.add_reaction("️<:y10:879495112558792764>")
-        await sent.add_reaction("️<:y11:879495112084836383>")
-        await sent.add_reaction("️<:y12:879495112571371530>")
-        await sent.add_reaction("️<:y13:879495112361652234>")
-
-    @commands.command(name="id")
-    @commands.has_role(829495730464882741) #Staff on modmail server
-    async def id(self, ctx):
-        if ctx.channel.category_id not in [829495730464882744, 832016200950218792]: #Inbox/Applications
-            await ctx.send(f"You can not run that command in this category!")
-            return
-
-        user_id = await get_id_from_thread(ctx.channel)
-        if user_id == None:
-            await ctx.message.reply("Unable to find user ID in channel.")
-            return
-
-        await ctx.message.reply(user_id)
-
-
-
-    @commands.command(name="controlpanel", aliases=["panel", "cp", "control"])
-    @commands.has_role(829495730464882741) #Staff on modmail server
-    async def controlpanel(self, ctx):
-        if ctx.channel.category_id not in [829495730464882744, 832016200950218792]: #Inbox/Applications
-            await ctx.send(f"You can not run that command in this category!")
-            return
-        
-        embed = full_embed(
-            title="Thread control panel",
-            description="🆔 - User's ID \n🎖️ - View user's roles \nℹ️ - View user's info")
-
-        sent = await ctx.message.reply(embed=embed)
-        await sent.add_reaction("🆔")
-        await sent.add_reaction("🎖️")
-        await sent.add_reaction("ℹ️")
-        
-
-
-
-    @commands.command(name="user", aliases=["info"])
-    @commands.has_role(829495730464882741) #Staff on modmail server
-    async def userinfo(self, ctx, user:typing.Optional[discord.User]=None):
-        if user == None:
-            member = self.guild.get_member(await get_id_from_thread(ctx.channel))
-            if member == None:
-                await ctx.message.reply("Unable to find user ID in channel.")
-                return
-        else:
-            member = self.guild.get_member(int(user.id))        
-
-        created_difference = time_ago_readable(member.created_at)
-        joined_difference = time_ago_readable(member.joined_at)
-
-        roles = "`@" + "` `@".join([role.name for role in member.roles[1:]]) + "`"
-
-        embed = full_embed(
-            author_name=member.name, 
-            author_icon=member.avatar_url,
-            fields={
-                "User Information":f"""Name: **{member.name}**
-                ID: `{member.id}` 
-                Created: **{created_difference}** (`{member.created_at.strftime('%B %d, %Y at %H:%M UTC')}`)
-                Mention: {member.mention}""",
-                "Member Information":f"""Joined: **{joined_difference} ago** (`{member.joined_at.strftime('%B %d, %Y at %H:%M UTC')}`)
-                Roles: {roles}"""
-            },
-            fields_inline=False,
-            blank=True)
-
-        await ctx.message.reply(embed=embed)
-
+    
 
     @commands.Cog.listener()
     async def on_message(self, message):
