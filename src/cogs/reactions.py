@@ -21,7 +21,6 @@ class Reactions(commands.Cog, name="Reaction listners"):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.user_id == self.bot.user.id: return # Reaction isn't added by the bot
-        
         if payload.guild_id == 781979349855371314: # Public server
                           
             member = self.guild.get_member(payload.user_id)
@@ -43,7 +42,7 @@ class Reactions(commands.Cog, name="Reaction listners"):
       
       
         elif payload.guild_id == 829495730464882738: #Modmail server
-            if payload.emoji.name not in ["ℹ️", "🎖️", "🆔"]: return
+            if payload.emoji.name not in ["ℹ️", "🎖️", "🆔", "y8", "y9", "y10", "y11", "y12", "y13", "uni"]: return
             channel = self.bot.get_channel(payload.channel_id)
             user_id = await get_id_from_thread(channel)
             user = self.bot.get_user(user_id)
@@ -87,8 +86,12 @@ class Reactions(commands.Cog, name="Reaction listners"):
             elif payload.emoji.name == "🆔": 
                 await channel.send(user.id)
             
-            elif payload.emoji.name in ["y8", "y9", "y10", "y11", "y12", "y13", "u"]:
-                if payload.emoji.name == "y9":
+            elif payload.emoji.name in ["y8", "y9", "y10", "y11", "y12", "y13", "uni"]:
+                if payload.emoji.name == "y8":
+                    await member.add_roles(self.year8)
+                    await channel.send(f"`Year 8` added to {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
+                elif payload.emoji.name == "y9":
+                    print("bla")
                     await member.add_roles(self.year9)
                     await channel.send(f"Added role `Year 9` to {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
                 elif payload.emoji.name == "y10":
@@ -103,6 +106,10 @@ class Reactions(commands.Cog, name="Reaction listners"):
                 elif payload.emoji.name == "y13":
                     await member.add_roles(self.year13)
                     await channel.send(f"Added role `Year 13` to {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
+                elif payload.emoji.name == "uni":
+                    await member.add_roles(self.university)
+                    await channel.send(f"Added role `University` to {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
+
 
 
     @commands.Cog.listener()
@@ -114,8 +121,11 @@ class Reactions(commands.Cog, name="Reaction listners"):
             member = self.guild.get_member(await get_id_from_thread(channel))
             requester = self.guild.get_member(payload.user_id)
             
-            if payload.emoji.name in ["y8", "y9", "y10", "y11", "y12", "y13", "u"]:
-                if payload.emoji.name == "y9":
+            if payload.emoji.name in ["y8", "y9", "y10", "y11", "y12", "y13", "uni"]:
+                if payload.emoji.name == "y8":
+                    await member.remove_roles(self.year8)
+                    await channel.send(f"Removed role `Year 8` from {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
+                elif payload.emoji.name == "y9":
                     await member.remove_roles(self.year9)
                     await channel.send(f"Removed role `Year 9` from {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
                 elif payload.emoji.name == "y10":
@@ -130,6 +140,10 @@ class Reactions(commands.Cog, name="Reaction listners"):
                 elif payload.emoji.name == "y13":
                     await member.remove_roles(self.year13)
                     await channel.send(f"Removed role `Year 13` from {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
+                elif payload.emoji.name == "uni":
+                    await member.remove_roles(self.university)
+                    await channel.send(f"Removed role `University` from {member.mention}({member.name}) requested by {requester.name} ({requester.id})")
+
 
 
 def setup(bot):
