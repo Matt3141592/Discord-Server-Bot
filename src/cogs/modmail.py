@@ -15,8 +15,11 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
         self.bot = bot
         self.mail_log = self.bot.get_channel(829495730644713486)
         
-   
 
+    # --------------------------------------------
+    # Misc functions
+    # --------------------------------------------
+    
     async def id_function(self, ctx):
         user_id = await get_id_from_thread(ctx.channel)
         if user_id == None:
@@ -58,6 +61,11 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
             max_values=1)
         return embed, dropdown
 
+
+    # --------------------------------------------
+    # Functions used by commands and components
+    # --------------------------------------------
+
     async def roles_function(self, ctx):
         member = self.bot.get_guild(781979349855371314).get_member(await get_id_from_thread(ctx.channel))
         if member == None:
@@ -70,7 +78,6 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
 
     async def role_edit(self, ctx, role, action="add"):
         guild = self.bot.get_guild(781979349855371314)
-        member = guild.get_member(await get_id_from_thread(ctx.channel))
         role_name = f"Year {role}"
         if role == "8":
             role = discord.utils.get(guild.roles, name = "Year 8")
@@ -88,22 +95,13 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
             role = discord.utils.get(guild.roles, name = "University")
             role_name = "University"
     
+        member = guild.get_member(await get_id_from_thread(ctx.channel))
         if action == "remove":
             await member.remove_roles(role)
             await ctx.send(f"Removed role `{role_name}` from {member.mention} (**{member.name}**, {member.id}).", delete_after=15)
         elif action == "add":
             await member.add_roles(role)
             await ctx.send(f"Added role `{role_name}` to {member.mention} (**{member.name}**, {member.id}).",delete_after=15)
-    
-    @cog_ext.cog_component()
-    async def role_select(self, ctx: ComponentContext):
-        split_value = ctx.selected_options[0].split()
-        await self.role_edit(ctx, role=split_value[1], action=split_value[0])
-
-        await ctx.edit_origin(content="You pressed a button!")
-
-
-
 
 
     async def info_function(self, ctx):
@@ -128,25 +126,43 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
         await ctx.reply(embed=embed)
 
 
+    # --------------------------------------------
+    # Commands redirecting to function
+    # --------------------------------------------
+    
+    @cog_ext.cog_slash(name="info", description="Closes and logs thread", guild_ids=modmail_guild_id)
+    @commands.has_role(829495730464882741) #Staff on modmail server
+    async def info_command(self, ctx:SlashContext):
+        await self.info_function(ctx)   
 
     @cog_ext.cog_slash(name="id", description="Fetches ID of thread creator", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
     async def id_command(self, ctx:SlashContext):
         await self.id_function(ctx)
-
     
     @cog_ext.cog_slash(name="roles", description="Displays role of thread creator", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
     async def roles_command(self, ctx:SlashContext):
         await self.roles_function(ctx)
-
-    @cog_ext.cog_slash(name="info", description="Closes and logs thread", guild_ids=modmail_guild_id)
-    @commands.has_role(829495730464882741) #Staff on modmail server
-    async def info_command(self, ctx:SlashContext):
-        await self.info_function(ctx)    
-        
     
+    @cog_ext.cog_component() # Receives selects in roles drop down
+    async def role_select(self, ctx: ComponentContext):
+        split_value = ctx.selected_options[0].split()
+        await self.role_edit(ctx, role=split_value[1], action=split_value[0])
 
+        if split_value[0] == "add": action = "added"
+        else: action = "removed"
+        content = ctx.origin_message.content + f"\n{ctx.author} {action} `{split_value[1]}`"
+    
+        member = self.bot.get_guild(781979349855371314).get_member(await get_id_from_thread(ctx.channel))
+        embed, dropdown = await self.roles_message(member)
+        
+        await ctx.origin_message.edit(content=content, embed=embed, components=[create_actionrow(dropdown)])
+ 
+
+    # --------------------------------------------
+    # Control panel command and functions to receive button inputs
+    # --------------------------------------------
     
     @cog_ext.cog_slash(name="controlpanel", description="Returns the threads' control panel", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
@@ -173,14 +189,10 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
     async def info_button(self, ctx: ComponentContext):
         await self.info_function(ctx)
 
-
-
-
-
-
    
-
-
+    # --------------------------------------------
+    # Other commands
+    # --------------------------------------------
 
     @cog_ext.cog_slash(name="close", description="Closes and logs thread", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
@@ -204,18 +216,6 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
         
         await ctx.channel.delete(reason=f"Closed by {ctx.author.name} ({ctx.author.id})")
         os.remove(file_name)
-    
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.id != 804299895778443276: return #ModMail bot
-        if message.channel.category_id not in [829495730464882744, 832016200950218792]: return #Inbox/Applications
-
-        if message.content.startswith("ACCOUNT AGE "):
-            await message.add_reaction("🆔")
-            await message.add_reaction("🎖️")
-            await message.add_reaction("ℹ️")
-
 
 
 
