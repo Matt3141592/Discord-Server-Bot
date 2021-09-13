@@ -1,4 +1,6 @@
 import datetime, discord
+from discord.ext import commands
+import asyncio
 
 def time_ago_readable(input_days):
     difference_days  = (datetime.datetime.today() - input_days).days
@@ -25,3 +27,14 @@ async def get_id_from_thread(channel):
         except IndexError as e:
             return None
     return int(user_id)
+
+@commands.command()
+@commands.has_role(829495730464882741) #Staff on modmail server
+async def ban(self, ctx):
+    msgs = []
+    for i in range(10):
+        msg = await ctx.send("ban")
+        msgs.append(msg)
+    await asyncio.sleep(1)
+    for msg in msgs:
+        await msg.delete()
