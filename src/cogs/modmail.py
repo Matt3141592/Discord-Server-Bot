@@ -6,6 +6,7 @@ from discord.ext import commands
 from helpers.embed import full_embed
 from helpers.misc import time_ago_readable, get_id_from_thread
 
+# Has this change come through?
 modmail_guild_id = [829495730464882738]
 
 class ModmailCommands(commands.Cog, name='Modmail Commands'):
