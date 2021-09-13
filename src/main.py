@@ -25,5 +25,7 @@ async def on_ready():
     print("--------")
 
 bot.load_extension("cogs.modmail")
+bot.load_extension("cogs.misc")
+
 
 bot.run(discord_secret)
