@@ -194,6 +194,16 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
     # Other commands
     # --------------------------------------------
 
+    @commands.command()
+    async def ban(self, ctx):
+        msgs = []
+        for i in range(10):
+            msg = await ctx.send("ban")
+            msgs.append(msg)
+        await asyncio.sleep(1)
+        for msg in msgs:
+            await msg.delete()
+            
     @cog_ext.cog_slash(name="close", description="Closes and logs thread", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
     async def close_command(self, ctx:SlashContext):
