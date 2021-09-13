@@ -193,7 +193,7 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
     # --------------------------------------------
     # Other commands
     # --------------------------------------------
-            
+
     @cog_ext.cog_slash(name="close", description="Closes and logs thread", guild_ids=modmail_guild_id)
     @commands.has_role(829495730464882741) #Staff on modmail server
     async def close_command(self, ctx:SlashContext):
