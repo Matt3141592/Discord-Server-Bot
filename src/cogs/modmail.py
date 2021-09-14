@@ -46,6 +46,28 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
         year12_status = await self.operation(member, "Year 12")
         year13_status = await self.operation(member, "Year 13")
         university_status = await self.operation(member, "University")
+        
+        bio_status = await self.operation(member, "Biology mentor")
+        chem_status = await self.operation(member, "Chemistry mentor")
+        phys_status = await self.operation(member, "Physics mentor")
+        comp_status = await self.operation(member, "Computer science mentor")
+        psych_status = await self.operation(member, "Psychology mentor")
+        maths_status = await self.operation(member, "Maths mentor")
+        lit_status = await self.operation(member, "English literature mentor")
+        lang_status = await self.operation(member, "English language mentor")
+        french_status = await self.operation(member, "French mentor")
+        spanish_status = await self.operation(member, "Spanish mentor")
+        latin_status = await self.operation(member, "Latin mentor")
+        german_status = await self.operation(member, "German mentor")
+        welsh_status = await self.operation(member, "Welsh mentor")
+        mandarin_status = await self.operation(member, "Mandarin mentor")
+        arabic_status = await self.operation(member, "Arabic mentor")
+        geog_status = await self.operation(member, "Geography mentor")
+        busin_status = await self.operation(member, "Business mentor")
+        hist_status = await self.operation(member, "History mentor")
+        econ_status = await self.operation(member, "Economic mentor")
+        relig_status = await self.operation(member, "Religious studies mentor")
+        pe_status = await self.operation(member, "Physical Education mentor")
 
         dropdown = create_select(
             options = [
@@ -60,6 +82,17 @@ class ModmailCommands(commands.Cog, name='Modmail Commands'):
             custom_id="role_select",
             max_values=1)
         return embed, dropdown
+    
+        dropdown2 = create_select(
+            options = [
+                create_select_option(bio_status, value=f"{bio_status} 8", emoji=discord.utils.get(self.bot.emojis, name="y8")),
+                create_select_option(year8_status, value=f"{year8_status} 8", emoji=discord.utils.get(self.bot.emojis, name="y8")),
+                create_select_option(year8_status, value=f"{year8_status} 8", emoji=discord.utils.get(self.bot.emojis, name="y8"))],
+            placeholder="Change user's mentor roles",
+            custom_id="mentor_select",
+            max_values=1)
+        return embed, dropdown2
+                
 
 
     # --------------------------------------------
